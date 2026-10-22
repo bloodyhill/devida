@@ -2,6 +2,8 @@
 
 A cleaner Hisense VIDAA TV: ads and telemetry blocked at the DNS level, privacy settings tightened, and an Apple TV-style home you open as a tile.
 
+> **Have an Apple TV or another streaming box?** Follow [docs/APPLE-TV.md](docs/APPLE-TV.md) instead. With that setup, HDMI-CEC handles power and input switching, the TV stays offline so VIDAA can't show ads or send data, and you get AirPlay and the real tvOS interface. The rest of this README is for using VIDAA's own apps.
+
 ## What VIDAA does and doesn't allow
 
 VIDAA has no ADB and no way to replace the system home screen, and firmware updates are signature-checked. So the tricks [dumbtv](https://github.com/humblemuzzu/dumbtv) uses on Fire TV don't work here. What this project does instead:
