@@ -1,0 +1,3 @@
+# Extra hostnames to block on top of the upstream VIDAA blocklist.
+# Add anything that shows up in the NextDNS logs and looks like ads or telemetry.
+# One hostname per line; subdomains are blocked too.

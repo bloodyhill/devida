@@ -1,0 +1,5 @@
+# Domains to keep reachable even if the upstream VIDAA blocklist lists them.
+# One hostname per line. Re-run tools/nextdns_sync.py --prune after editing.
+#
+# Typical use: something you need broke (the app store, an app's sign-in). Find the
+# blocked hostname in NextDNS → Logs at the moment it fails and add it here.

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "youtube",
+    "name": "YouTube",
+    "tagline": "Creators, music and live TV",
+    "type": "web",
+    "url": "https://www.youtube.com/tv",
+    "glyph": "play",
+    "colors": ["#ff453a", "#a3000f"]
+  },
+  {
+    "id": "stremio",
+    "name": "Stremio",
+    "tagline": "Movies and series from your add-ons",
+    "type": "web",
+    "url": "https://noobygains.github.io/stremio-vidaa-tv/",
+    "glyph": "stremio",
+    "colors": ["#8a6cff", "#33178f"]
+  },
+  {
+    "id": "nuvio",
+    "name": "Nuvio",
+    "tagline": "Stream from your own sources",
+    "type": "web",
+    "url": "https://nuviotvsmart.vercel.app/vidaa.html",
+    "glyph": "wordmark",
+    "colors": ["#0ea5e9", "#0b2540"]
+  },
+  {
+    "id": "jellyfin",
+    "name": "Jellyfin",
+    "tagline": "Your home media server",
+    "type": "web",
+    "url": "{jellyfinUrl}",
+    "glyph": "jellyfin",
+    "colors": ["#aa5cc3", "#00a4dc"]
+  },
+  {
+    "id": "netflix",
+    "name": "Netflix",
+    "tagline": "Opens the built-in app",
+    "type": "native",
+    "appName": "Netflix",
+    "glyph": "letter",
+    "letter": "N",
+    "colors": ["#e50914", "#3d0004"]
+  },
+  {
+    "id": "prime",
+    "name": "Prime Video",
+    "tagline": "Opens the built-in app",
+    "type": "native",
+    "appName": "Prime Video",
+    "glyph": "wordmark",
+    "colors": ["#1aa3e8", "#0b1f3a"]
+  },
+  {
+    "id": "shahid",
+    "name": "Shahid",
+    "tagline": "Opens the built-in app",
+    "type": "native",
+    "appName": "Shahid",
+    "glyph": "wordmark",
+    "colors": ["#16c784", "#05392a"]
+  },
+  {
+    "id": "settings",
+    "name": "Settings",
+    "tagline": "Hidden apps, layout and device probe",
+    "type": "settings",
+    "glyph": "gear",
+    "colors": ["#48484a", "#1c1c1e"]
+  }
+]

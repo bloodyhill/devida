@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Device Probe</title>
+  <style>
+    html { font-size: calc(100vw / 120); }
+    body {
+      margin: 0; padding: 3rem 5rem; background: #000; color: #f5f5f7;
+      font-family: Inter, "Helvetica Neue", Arial, sans-serif; overflow: hidden;
+    }
+    h1 { margin: 0; font-size: 2.6rem; letter-spacing: -0.03em; }
+    .sub { margin-top: 0.4rem; font-size: 1.1rem; color: rgba(245,245,247,0.6); }
+    .cols { display: flex; gap: 3rem; margin-top: 2rem; }
+    .col { flex: 1; min-width: 0; }
+    h2 { margin: 0 0 0.8rem; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(245,245,247,0.6); }
+    pre {
+      margin: 0; padding: 1.2rem; border-radius: 1rem; background: #141416;
+      font: 0.95rem/1.45 Menlo, Consolas, monospace; white-space: pre-wrap; word-break: break-all;
+      max-height: 52rem; overflow: hidden;
+    }
+    .status { margin-top: 1.2rem; font-size: 1rem; color: rgba(245,245,247,0.6); }
+  </style>
+</head>
+<body>
+  <h1>Device probe</h1>
+  <div class="sub">Press every remote button once: arrows, OK, Back, the colour keys, then hold OK for two seconds. Press Back three times quickly to return.</div>
+  <div class="cols">
+    <div class="col"><h2>Device</h2><pre id="device"></pre></div>
+    <div class="col"><h2>Keys</h2><pre id="keys"></pre></div>
+  </div>
+  <div class="status" id="status"></div>
+
+  <script>
+  (function () {
+    'use strict';
+    var PATTERN = /hisense|vidaa|^omi|hbbtv|oipf|tizen|webos|appmanager|launchapp|smarttv|^tv|tv$/i;
+    var report = { probedAt: new Date().toISOString(), device: {}, keys: [] };
+
+    function safe(fn, fallback) { try { return fn(); } catch (e) { return fallback === undefined ? String(e) : fallback; } }
+
+    function describe(obj, depth) {
+      // Names and kinds of an object's members, one level down for objects.
+      var out = {};
+      safe(function () {
+        Object.getOwnPropertyNames(obj).forEach(function (k) {
+          var v = safe(function () { return obj[k]; }, null);
+          var t = typeof v;
+          if (t === 'function') out[k] = 'function(' + v.length + ')';
+          else if (t === 'object' && v && depth > 0) out[k] = describe(v, depth - 1);
+          else out[k] = t === 'object' ? (v === null ? 'null' : 'object') : t + ': ' + String(v).slice(0, 80);
+        });
+      });
+      return out;
+    }
+
+    function supportsSyntax(src) { return safe(function () { new Function(src); return true; }, false); }
+
+    var d = report.device;
+    d.userAgent = navigator.userAgent;
+    d.viewport = window.innerWidth + 'x' + window.innerHeight;
+    d.screen = screen.width + 'x' + screen.height;
+    d.devicePixelRatio = window.devicePixelRatio;
+    d.origin = location.origin;
+    d.windowMatches = {};
+    Object.getOwnPropertyNames(window).forEach(function (k) {
+      if (PATTERN.test(k)) d.windowMatches[k] = typeof window[k] === 'object' && window[k] ? describe(window[k], 1) : typeof safe(function () { return window[k]; }, null);
+    });
+    d.navigatorMatches = {};
+    for (var k in navigator) {
+      if (PATTERN.test(k)) d.navigatorMatches[k] = typeof navigator[k];
+    }
+    d.mimeTypes = safe(function () {
+      return Array.prototype.map.call(navigator.mimeTypes || [], function (m) { return m.type; });
+    }, []);
+    d.features = {
+      fetch: typeof fetch === 'function',
+      promise: typeof Promise === 'function',
+      intl: typeof Intl === 'object',
+      localStorage: safe(function () { localStorage.setItem('_p', '1'); localStorage.removeItem('_p'); return true; }, false),
+      cssVariables: safe(function () { return CSS.supports('--a', '0'); }, false),
+      cssGrid: safe(function () { return CSS.supports('display', 'grid'); }, false),
+      backdropFilter: safe(function () { return CSS.supports('backdrop-filter', 'blur(1px)') || CSS.supports('-webkit-backdrop-filter', 'blur(1px)'); }, false),
+      asyncAwait: supportsSyntax('async function f(){ await 0; }'),
+      optionalChaining: supportsSyntax('var a = {}; a?.b;'),
+      nullishCoalescing: supportsSyntax('var a = null ?? 1;')
+    };
+
+    function render() {
+      document.getElementById('device').textContent = JSON.stringify(report.device, null, 2);
+      document.getElementById('keys').textContent = report.keys.slice(-40).map(function (e) {
+        return e.type + '  keyCode=' + e.keyCode + '  key=' + e.key + '  code=' + e.code + (e.repeat ? '  (repeat)' : '');
+      }).join('\n') || 'Waiting for key presses…';
+    }
+
+    // Send results back only when served by tools/probe_server.py over plain HTTP:
+    // an HTTPS page (GitHub Pages) can't post to a LAN address.
+    var canReport = location.protocol === 'http:';
+    var sendTimer = null;
+    function send() {
+      if (!canReport) {
+        document.getElementById('status').textContent = 'Results shown on screen only (open this page from tools/probe_server.py to collect them on your PC).';
+        return;
+      }
+      clearTimeout(sendTimer);
+      sendTimer = setTimeout(function () {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/report');
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.onload = function () { document.getElementById('status').textContent = 'Sent to PC at ' + new Date().toLocaleTimeString(); };
+        xhr.onerror = function () { document.getElementById('status').textContent = 'Could not reach the PC'; };
+        xhr.send(JSON.stringify(report));
+      }, 400);
+    }
+
+    var backTimes = [];
+    function onKey(e) {
+      report.keys.push({ type: e.type, keyCode: e.keyCode, key: e.key, code: e.code, repeat: !!e.repeat, t: Math.round(performance.now()) });
+      render();
+      send();
+      // Keep every key on this page, including Back, so it can be recorded.
+      e.preventDefault();
+      if (e.type === 'keydown' && [8, 27, 461, 10009].indexOf(e.keyCode) !== -1 && !e.repeat) {
+        var now = Date.now();
+        backTimes = backTimes.filter(function (t) { return now - t < 1500; }).concat(now);
+        if (backTimes.length >= 3) history.length > 1 ? history.back() : (location.href = './');
+      }
+    }
+    document.addEventListener('keydown', onKey, true);
+    document.addEventListener('keyup', onKey, true);
+
+    render();
+    send();
+  })();
+  </script>
+</body>
+</html>

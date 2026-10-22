@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app" class="app is-loading">
+    <div class="backdrop" aria-hidden="true">
+      <div class="bd-layer is-active"></div>
+      <div class="bd-layer"></div>
+      <div class="bd-scrim"></div>
+    </div>
+
+    <header class="clock" aria-live="off">
+      <div class="clock-time" id="clock-time"></div>
+      <div class="clock-date" id="clock-date"></div>
+    </header>
+
+    <section class="shelf" id="shelf" aria-live="polite">
+      <div class="shelf-eyebrow" id="shelf-eyebrow"></div>
+      <h1 class="shelf-title" id="shelf-title"></h1>
+      <p class="shelf-tagline" id="shelf-tagline"></p>
+    </section>
+
+    <section class="grid-wrap">
+      <div class="grid" id="grid" role="grid" aria-label="Apps"></div>
+    </section>
+
+    <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden>
+      <div class="sheet-panel">
+        <div class="sheet-title" id="sheet-title"></div>
+        <div class="sheet-subtitle" id="sheet-subtitle"></div>
+        <div class="sheet-list" id="sheet-list" role="menu"></div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status"></div>
+    <div class="hint" id="hint"></div>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
