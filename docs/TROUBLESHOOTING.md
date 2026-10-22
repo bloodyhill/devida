@@ -13,12 +13,18 @@ Run `python tools/probe_server.py`, open the printed URL on the TV, and press ev
 | OK sends keyup? | Yes, with repeats while held, so hold-OK works |
 | Back, Input, Home, Settings | Handled by VIDAA before the page sees them: the launcher can't capture or override these keys |
 | Colour key codes | _not yet probed_ (launcher assumes red = 403) |
-| TV APIs visible to web apps | `omi_platform` (`addPlatformEventListener`, `sendPlatformMessage`), `oipfObjectFactory` / `CreateOipfObject` (HbbTV/OIPF: application manager, video broadcast, channel config…), `Hisense` (`log`, `VirtualKeyboard`, …). The full list is in the second probe run |
+| Model | 50A51HXVT, VIDAA U09.09, region EM_A, country SAU, 4K panel (web apps render at 720p), HDR10/HLG/Dolby Vision |
+| Privacy flags | `adTargetEnable` 0, `eulaAdEnable` 0: ad targeting already off |
+| Casting (DIAL) | Enabled for YouTube, YouTube TV, YouTube Kids, Netflix, Amazon, iPlayer: the phone cast button works for these |
+| TV APIs visible to web apps | ~60 read-only `Hisense_Get*` getters; `Hisense_RegisterObserver` / `UnregisterObserver`, `Hisense_SetRemoteKeyboard`, `Hisense_LoginWithVIDAA`, `Hisense_enableVKB` / `disableVKB`; `TvInfo_getParam` / `setParam` / `getCurrentParam` / `setParamObserver`; `omi_platform` and `opera_omi` (`addPlatformEventListener`, `sendPlatformMessage`); `oipfObjectFactory` (HbbTV: application manager, video broadcast, channel config…) |
+| Input switching / app launch / AirPlay | **None found.** No getter or setter refers to the input source, and no function launches built-in apps |
 
 What's known about these APIs:
 - **`omi_platform.sendPlatformMessage`** is real, but the only message type people have seen it act on is a launcher refresh (`AllAppsUpdate`). Nobody has documented an input-switch or app-launch message yet ([NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv) notes the TV ignores its play messages).
 - **OIPF / HbbTV objects** cover broadcast channels and web apps opened by URL. The standard defines no HDMI input switching.
 - **`Hisense_installApp`** only works from whitelisted store origins, not from github.io.
+- **`TvInfo_*`** wraps a fixed list of settings. [anax/omavidaa](https://github.com/anax/omavidaa) reverse-engineered the same chip and firmware family and lists about 60 parameter names (volume, mute, picture mode, ad flags, kids/store/hotel mode…). None of them is an input source. The same project probed the TV's local services (`appmgr`, `app`, `system`, `launcher`, `tvmgr`) and found none.
+- **Last lead:** `getTVProprietaryFunctions()` (HbbTV vendor extensions). The probe now lists its output without invoking anything.
 
 ## DNS
 

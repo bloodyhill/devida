@@ -44,7 +44,7 @@
     'use strict';
     // Globals worth listing: Hisense/VIDAA/Opera/OIPF names, plus TV-ish words on
     // names that aren't standard PascalCase constructors or on* handlers.
-    var VENDOR = /hisense|vidaa|^omi|opera|hbbtv|oipf|tizen|webos|smarttv/i;
+    var VENDOR = /hisense|vidaa|^omi|opera|hbbtv|oipf|tizen|webos|smarttv|tvinfo|hiutils|proprietary|vowos|cefquery|^VK_/i;
     var TOPIC = /appmanager|launch|source|input|hdmi|airplay|cast|^tv|tv$/i;
     function interesting(k) {
       if (VENDOR.test(k)) return true;
@@ -126,6 +126,11 @@
       }
     });
 
+    // HbbTV-style vendor extensions: listing them is read-only; nothing is invoked.
+    if (typeof window.getTVProprietaryFunctions === 'function') {
+      report.getters.getTVProprietaryFunctions = redact(safe(function () { return window.getTVProprietaryFunctions(); }));
+    }
+
     // ---- Events ----
     function logEvent(kind, data) {
       var text = safe(function () { return typeof data === 'string' ? data : JSON.stringify(data); }, String(data));
@@ -146,7 +151,9 @@
     var apiEl = document.getElementById('api');
     // Compact on purpose: candidates first, then every function name, then getter values.
     var fns = functionPaths(report.api, '', []);
-    var candidates = fns.filter(function (p) { return CANDIDATE.test(p.replace(/^Hisense_Get\w+/, '')) || /^Hisense_(?!Get)/.test(p); });
+    var candidates = fns.filter(function (p) {
+      return CANDIDATE.test(p.replace(/^Hisense_Get\w+/, '')) || /^Hisense_(?!Get)|^TvInfo_|Proprietary/.test(p);
+    });
     var apiText =
       'CANDIDATES (' + candidates.length + ')\n  ' + (candidates.join('\n  ') || 'none') +
       '\n\nALL FUNCTIONS (' + fns.length + ')\n  ' + fns.join(', ') +
