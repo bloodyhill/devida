@@ -29,7 +29,7 @@
 </head>
 <body>
   <h1>Device probe</h1>
-  <div class="sub">Up / Down: scroll the API list a page at a time. Take a photo of each page. Then press Input or Settings once and come back. Back three times quickly to leave.</div>
+  <div class="sub">Use the ▲ ▼ arrow keys (not the number keys) to page through TV APIs, and photograph each page. Then press Input once and come back. Back three times quickly to leave.</div>
   <div class="cols">
     <div class="col api box"><h2>TV APIs <span id="page"></span></h2><pre id="api"></pre></div>
     <div class="col side">
@@ -51,7 +51,10 @@
       return TOPIC.test(k) && !/^[A-Z][A-Za-z0-9]*$/.test(k) && !/^on[a-z]/.test(k);
     }
     // Values that identify this TV: shown as present, never printed.
-    var SENSITIVE = /mac|deviceid|serial|uuid|token|key|ip|dns|cert|account|user/i;
+    // "id$" covers the advertising ID, device ID and uuid.
+    var SENSITIVE = /mac|serial|token|key|getip|ipaddr|ipv4|ipv6|^ip$|dns|cert|account|user|id$/i;
+    // Function names that could switch inputs, open apps or cast.
+    var CANDIDATE = /source|input|hdmi|launch|app|cast|airplay|dial|exit|key|home|menu|setting|open|start|switch|channel|message|tv/i;
     var report = { probedAt: new Date().toISOString(), device: {}, api: {}, getters: {}, events: [], keys: [] };
 
     function safe(fn, fallback) { try { return fn(); } catch (e) { return fallback === undefined ? 'error: ' + e : fallback; } }
@@ -78,6 +81,27 @@
       return out;
     }
 
+    function redact(v) {
+      // Getters can return JSON strings or objects; hide identifying fields inside them.
+      if (typeof v === 'string' && /^\s*[{[]/.test(v)) v = safe(function () { return JSON.parse(v); }, v);
+      if (!v || typeof v !== 'object') return v;
+      var out = Array.isArray(v) ? [] : {};
+      Object.keys(v).forEach(function (k) {
+        out[k] = SENSITIVE.test(k) && v[k] ? '(hidden)' : redact(v[k]);
+      });
+      return out;
+    }
+
+    function functionPaths(tree, prefix, out) {
+      Object.keys(tree).forEach(function (k) {
+        var v = tree[k];
+        var path = prefix ? prefix + '.' + k : k;
+        if (typeof v === 'string' && v.indexOf('fn(') === 0) out.push(path + v.slice(2));
+        else if (v && typeof v === 'object') functionPaths(v, path, out);
+      });
+      return out;
+    }
+
     // ---- Device ----
     var d = report.device;
     d.userAgent = navigator.userAgent;
@@ -98,7 +122,7 @@
     Object.keys(report.api).forEach(function (k) {
       if (/^Hisense_Get/i.test(k) && typeof window[k] === 'function' && window[k].length === 0) {
         var val = safe(function () { return window[k](); });
-        report.getters[k] = SENSITIVE.test(k) ? (val ? '(present, hidden)' : String(val)) : val;
+        report.getters[k] = SENSITIVE.test(k) ? (val ? '(present, hidden)' : String(val)) : redact(val);
       }
     });
 
@@ -120,7 +144,15 @@
 
     // ---- Rendering ----
     var apiEl = document.getElementById('api');
-    var apiText = JSON.stringify({ getters: report.getters, api: report.api }, null, 1);
+    // Compact on purpose: candidates first, then every function name, then getter values.
+    var fns = functionPaths(report.api, '', []);
+    var candidates = fns.filter(function (p) { return CANDIDATE.test(p.replace(/^Hisense_Get\w+/, '')) || /^Hisense_(?!Get)/.test(p); });
+    var apiText =
+      'CANDIDATES (' + candidates.length + ')\n  ' + (candidates.join('\n  ') || 'none') +
+      '\n\nALL FUNCTIONS (' + fns.length + ')\n  ' + fns.join(', ') +
+      '\n\nGETTERS\n' + Object.keys(report.getters).map(function (k) {
+        return '  ' + k.replace(/^Hisense_Get/, '') + ': ' + safe(function () { return JSON.stringify(report.getters[k]); }).slice(0, 220);
+      }).join('\n');
 
     function renderApi() {
       apiEl.textContent = apiText;
