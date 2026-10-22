@@ -17,14 +17,22 @@ Run `python tools/probe_server.py`, open the printed URL on the TV, and press ev
 | Privacy flags | `adTargetEnable` 0, `eulaAdEnable` 0: ad targeting already off |
 | Casting (DIAL) | Enabled for YouTube, YouTube TV, YouTube Kids, Netflix, Amazon, iPlayer: the phone cast button works for these |
 | TV APIs visible to web apps | ~60 read-only `Hisense_Get*` getters; `Hisense_RegisterObserver` / `UnregisterObserver`, `Hisense_SetRemoteKeyboard`, `Hisense_LoginWithVIDAA`, `Hisense_enableVKB` / `disableVKB`; `TvInfo_getParam` / `setParam` / `getCurrentParam` / `setParamObserver`; `omi_platform` and `opera_omi` (`addPlatformEventListener`, `sendPlatformMessage`); `oipfObjectFactory` (HbbTV: application manager, video broadcast, channel config…) |
-| Input switching / app launch / AirPlay | **None found.** No getter or setter refers to the input source, and no function launches built-in apps |
+| Input switching / app launch / AirPlay | **None.** Confirmed over the full list of 195 functions (see the conclusion below) |
 
 What's known about these APIs:
 - **`omi_platform.sendPlatformMessage`** is real, but the only message type people have seen it act on is a launcher refresh (`AllAppsUpdate`). Nobody has documented an input-switch or app-launch message yet ([NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv) notes the TV ignores its play messages).
 - **OIPF / HbbTV objects** cover broadcast channels and web apps opened by URL. The standard defines no HDMI input switching.
 - **`Hisense_installApp`** only works from whitelisted store origins, not from github.io.
 - **`TvInfo_*`** wraps a fixed list of settings. [anax/omavidaa](https://github.com/anax/omavidaa) reverse-engineered the same chip and firmware family and lists about 60 parameter names (volume, mute, picture mode, ad flags, kids/store/hotel mode…). None of them is an input source. The same project probed the TV's local services (`appmgr`, `app`, `system`, `launcher`, `tvmgr`) and found none.
-- **Last lead:** `getTVProprietaryFunctions()` (HbbTV vendor extensions). The probe now lists its output without invoking anything.
+- **`getTVProprietaryFunctions()`** (HbbTV vendor extensions) returns `null` on this TV, so there are none.
+- **`vowOS`** (also visible to github.io pages, 195 functions in all):
+  - `vowOS.tvinfo`: brightness, contrast, kids mode, art mode, store/hotel mode, version info.
+  - `vowOS.store`: `getInstalledPkgs`, `installApp`, `sendPkgmgrRequest`.
+  - `vowOS.service`: a socket and `syncExecute` bridge to the TV's local `tvinfo` / `hiutils` / `pkgmgr` services.
+
+  None of these switches inputs or launches apps.
+
+**Conclusion (probe of 2026-10-23):** a web page on this firmware can read TV state and change a few picture and parental settings, but it can't switch HDMI inputs, open built-in apps or start AirPlay. Use HDMI-CEC with an external box instead ([APPLE-TV.md](APPLE-TV.md)).
 
 ## DNS
 
