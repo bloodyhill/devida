@@ -1,24 +1,39 @@
 # devida
 
-A cleaner Hisense VIDAA TV: ads and telemetry blocked at the DNS level, privacy settings tightened, and an Apple TV-style home you open as a tile.
+Cleaning up a Hisense VIDAA TV: no ads, no viewing-data collection, and a calm Apple TV-style experience.
 
-> **Have an Apple TV or another streaming box?** Follow [docs/APPLE-TV.md](docs/APPLE-TV.md) instead. With that setup, HDMI-CEC handles power and input switching, the TV stays offline so VIDAA can't show ads or send data, and you get AirPlay and the real tvOS interface. The rest of this README is for using VIDAA's own apps.
+## Recommended: Hisense + Apple TV
+
+Follow **[docs/APPLE-TV.md](docs/APPLE-TV.md)**.
+
+- The Apple TV is the interface, and the Hisense is just a screen.
+- HDMI-CEC wakes, switches and sleeps the TV with the Apple TV.
+- AirPlay comes from the Apple TV.
+- The TV stays **offline**, so VIDAA has no ads to show and nowhere to send data.
+
+Before taking the TV offline, withdraw its data consents with [docs/TV-SETTINGS.md](docs/TV-SETTINGS.md).
+
+That's the whole setup. Everything below is optional.
 
 ## What VIDAA does and doesn't allow
 
-VIDAA has no ADB and no way to replace the system home screen, and firmware updates are signature-checked. So the tricks [dumbtv](https://github.com/humblemuzzu/dumbtv) uses on Fire TV don't work here. What this project does instead:
+- **No deep changes.** VIDAA has no ADB, no way to replace the system home screen, and signature-checked firmware updates. So the tricks [dumbtv](https://github.com/humblemuzzu/dumbtv) uses on Fire TV don't work here.
+- **Web pages can't drive the TV.** A device probe on this TV (50A51HXVT, VIDAA U09.09) found 195 TV-specific functions available to web pages. None of them switches HDMI inputs, launches built-in apps or starts AirPlay. Details are in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
-| Goal | How | Limit |
+## Optional: if you use VIDAA's own apps
+
+Only needed if the TV stays online, for example to use VIDAA apps without the Apple TV. Nothing is installed into the TV's system, and every step can be undone.
+
+| Piece | What it does | Limit |
 | --- | --- | --- |
-| Block ads, recommendations and telemetry | NextDNS profile with the [VIDAA blocklist](https://github.com/ipanalytics/Hisense-VIDAA-DNS-Clean-TV-Blocklist) (137 hosts) + HaGeZi | YouTube ads can't be blocked by DNS; the app store may partly break |
-| Stop the TV collecting viewing data | Withdraw consents on the TV ([docs/TV-SETTINGS.md](docs/TV-SETTINGS.md)) | Done by hand, once |
-| Clean tvOS-style home | `launcher/` web app, pinned to the VIDAA home as a tile | The stock home still appears at power-on; built-in apps (Netflix…) open from there |
+| **DNS blocking** (`tools/nextdns_sync.py`, `dns/`) | A NextDNS profile with the [VIDAA blocklist](https://github.com/ipanalytics/Hisense-VIDAA-DNS-Clean-TV-Blocklist) (137 hosts) + HaGeZi blocks ads, recommendations and telemetry | YouTube ads can't be blocked by DNS; the app store may partly break |
+| **Launcher** (`launcher/`, live at https://bloodyhill.github.io/devida/) | A tvOS-style home for web apps (YouTube TV, Stremio, Nuvio, Jellyfin) | The stock home still appears at power-on; built-in apps (Netflix…) open from there |
+| **Tile installer** (`tools/install_tile.py`) | Pins the launcher to the VIDAA home using [Sidee](https://github.com/Empi9245/Sidee)'s pairing | Not yet tested on this firmware; see [tools/README-install.md](tools/README-install.md) |
+| **Device probe** (`launcher/probe.html`, `tools/probe_server.py`) | Lists what a web page can do on the TV | Already run; results in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) |
 
-Nothing is installed into the TV's system, and every step can be undone.
+### DNS blocking
 
-## Setup
-
-1. **NextDNS profile.**
+1. **Set up NextDNS.**
    - Create a free account at [nextdns.io](https://nextdns.io).
    - In **Privacy**, add the *HaGeZi – Multi PRO* blocklist and turn on *Native Tracking Protection*.
    - In **Setup → Linked IP**, link your IP from the PC while it's on the phone hotspot, and copy the update URL.
@@ -29,17 +44,15 @@ Nothing is installed into the TV's system, and every step can be undone.
    ```bash
    python tools/nextdns_sync.py
    ```
-3. **TV DNS and privacy.** Follow [docs/TV-SETTINGS.md](docs/TV-SETTINGS.md).
-4. **Launcher config.** In `launcher/config.js`, paste the NextDNS update URL into `nextdnsLinkUrl`. Opening the launcher then re-links the hotspot's changing IP. Add `jellyfinUrl` if you run Jellyfin.
-5. **Host the launcher** on any HTTPS static host (GitHub Pages works) and note its URL.
-6. **Pin it to the VIDAA home** with `tools/install_tile.py`. It uses [Sidee](https://github.com/Empi9245/Sidee)'s pairing; see `tools/README-install.md`.
-7. **Probe the TV once**:
-   ```bash
-   python tools/probe_server.py
-   ```
-   Then open the printed URL on the TV and record the results in [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+3. **Point the TV at NextDNS:** Manual DNS, as described in [docs/TV-SETTINGS.md](docs/TV-SETTINGS.md#dns-only-for-the-nextdns-setup).
 
-## Using the launcher
+### Launcher
+
+1. In `launcher/config.js`, paste the NextDNS update URL into `nextdnsLinkUrl`; opening the launcher then re-links the hotspot's changing IP. Add `jellyfinUrl` if you run Jellyfin.
+2. Push to `main`. GitHub Pages redeploys `launcher/` automatically.
+3. Pin it to the VIDAA home with `tools/install_tile.py` (see [tools/README-install.md](tools/README-install.md)).
+
+The repo is public, so anything in `config.js` is too. Someone with the NextDNS link URL could re-point your profile's linked IP.
 
 | Remote | Action |
 | --- | --- |
@@ -48,7 +61,10 @@ Nothing is installed into the TV's system, and every step can be undone.
 | Hold OK / Red | Move or hide the app |
 | Settings tile | Show hidden apps, reset layout, run the probe |
 
-To add an app, add an entry to `launcher/apps.json`: `type: "web"` with an HTTPS `url`, a `glyph` (`play`, `stremio`, `jellyfin`, `letter`, `wordmark`, `gear`) or an `icon` URL, and two `colors` for the tile gradient.
+To add an app, add an entry to `launcher/apps.json`:
+- `type: "web"` with an HTTPS `url`
+- a `glyph` (`play`, `stremio`, `jellyfin`, `letter`, `wordmark`, `gear`) or an `icon` URL
+- two `colors` for the tile gradient
 
 Preview on a computer:
 ```bash
@@ -58,6 +74,7 @@ Then open http://localhost:8090. The arrow keys and Enter act as the remote, and
 
 ## Undo
 
-- Set the TV's IP Settings back to **Auto**.
-- Remove the tile from the VIDAA app list.
-- Re-enable any consents you want back.
+- **Apple TV setup:** reconnect the TV to Wi-Fi, and turn CEC off if you don't want it.
+- **DNS:** set the TV's IP Settings back to **Auto**.
+- **Launcher:** remove the tile from the VIDAA app list.
+- **Consents:** re-enable any you want back.

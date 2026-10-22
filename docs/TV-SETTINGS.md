@@ -28,7 +28,7 @@ Leave the main **VIDAA / Smart TV terms of service** accepted. Declining them tu
 | Bluetooth | Settings → System → Bluetooth | Off if unused |
 | VIDAA account | Settings → Account | Sign out (only if no app needs it) |
 
-## DNS (from the README, step 2)
+## DNS (only for the NextDNS setup)
 
 Settings → Network → Network Configuration → IP Settings → **Manual**.
 
