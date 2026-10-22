@@ -6,13 +6,19 @@ Run `python tools/probe_server.py`, open the printed URL on the TV, and press ev
 
 | Fact | Value on this TV |
 | --- | --- |
-| Firmware | V0000.09.09… (from Settings → Support → System Info) |
-| Browser user agent | _probe_ |
-| Viewport | _probe_ |
-| Back key code | _probe_ (launcher assumes 8; also accepts 461 / 10009) |
-| Colour key codes | _probe_ (launcher assumes red = 403) |
-| OK sends keyup? | _probe_. If **no**, set `okLongPress: false` in `launcher/config.js` |
-| TV APIs visible to web apps | _probe_ (`windowMatches`). Any app-launch function here can power `launchNative` |
+| Model / chip | VIDAA-MT9602, VIDAA 9.0, firmware V0000.09.09Q P1015 |
+| Browser | Chromium 111 (Hisense "Odin" browser); modern JS and CSS are fine |
+| Viewport | 1920×1080, devicePixelRatio 1 |
+| Arrows / OK / digits | 37–40 / 13 / 48–57 |
+| OK sends keyup? | Yes, with repeats while held, so hold-OK works |
+| Back, Input, Home, Settings | Handled by VIDAA before the page sees them: the launcher can't capture or override these keys |
+| Colour key codes | _not yet probed_ (launcher assumes red = 403) |
+| TV APIs visible to web apps | `omi_platform` (`addPlatformEventListener`, `sendPlatformMessage`), `oipfObjectFactory` / `CreateOipfObject` (HbbTV/OIPF: application manager, video broadcast, channel config…), `Hisense` (`log`, `VirtualKeyboard`, …). The full list is in the second probe run |
+
+What's known about these APIs:
+- **`omi_platform.sendPlatformMessage`** is real, but the only message type people have seen it act on is a launcher refresh (`AllAppsUpdate`). Nobody has documented an input-switch or app-launch message yet ([NoobyGains/stremio-vidaa-tv](https://github.com/NoobyGains/stremio-vidaa-tv) notes the TV ignores its play messages).
+- **OIPF / HbbTV objects** cover broadcast channels and web apps opened by URL. The standard defines no HDMI input switching.
+- **`Hisense_installApp`** only works from whitelisted store origins, not from github.io.
 
 ## DNS
 

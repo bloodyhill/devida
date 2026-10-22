@@ -70,7 +70,9 @@ def summarize(report, path):
     print("\n— probe report (%s) —" % datetime.now().strftime("%H:%M:%S"))
     print("UA:        %s" % device.get("userAgent"))
     print("viewport:  %s  screen: %s" % (device.get("viewport"), device.get("screen")))
-    print("TV APIs:   %s" % (", ".join(device.get("windowMatches", {})) or "none found"))
+    print("TV APIs:   %s" % (", ".join(report.get("api", {})) or "none found"))
+    for event in report.get("events", [])[-5:]:
+        print("event:     [%s] %s" % (event.get("kind"), event.get("data")))
     print("keydown:   %s" % downs)
     print("keyup:     %s" % ups)
     if 13 in downs:
